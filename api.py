@@ -1,5 +1,6 @@
 from mojang import API
 from hypixel import HypixelException
+from hypixel.errors import GuildNotFound, PlayerNotFound
 import os, uuid, hypixel, asyncio
 from dotenv import load_dotenv
 
@@ -8,15 +9,31 @@ mojang = API()
 
 def get_uuid(username: str) -> str:
 	try:
-		playerUUID = mojang.get_uuid(username)
+		return str(uuid.UUID(mojang.get_uuid(username)))
 	except:
 		return None
-	return str(uuid.UUID(playerUUID))
 
-async def check_guild(uuid: str):
+async def check_stats(uuid: str):
 	client = hypixel.Client(os.getenv('HYPIXEL_API_KEY'))
+
 	async with client:
-		return await client.guild_from_player(uuid)
+		try:
+			return await client.player(uuid)
+		except PlayerNotFound:
+			return None
+		except HypixelException:
+			return False
+	
+async def check_guild(username: str) -> hypixel.Guild:
+	client = hypixel.Client(os.getenv('HYPIXEL_API_KEY'))
+
+	async with client:
+		try:
+			return await client.guild_from_player(username)
+		except GuildNotFound:
+			return None
+		except HypixelException:
+			return False
 
 def compare_usernames(dcUsername: str, hypixelUsername: str):
 	dcUsername = dcUsername.removesuffix('#0')
@@ -25,6 +42,3 @@ def compare_usernames(dcUsername: str, hypixelUsername: str):
 		#legacyUsername = True
 		return dcUsername == hypixelUsername
 	return dcUsername.lower() == hypixelUsername.lower()
-
-guild = asyncio.run(check_guild('sorkopiko'))
-print(guild)

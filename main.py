@@ -44,13 +44,34 @@ class VerifyModal(discord.ui.Modal):
 		max_length=16
 	)
 	async def on_submit(self, interaction: discord.Interaction):
-		await interaction.response.defer()
-		await interaction.followup.send('Verifying...', ephemeral=True)
+		await interaction.response.send_message('🔄 Verifying Username... [1/3]', ephemeral=True)
 		uuid = get_uuid(self.username)
 		if uuid == None:
-			await interaction.followup.send('❌ Invalid username!', ephemeral=True)
+			await interaction.message.edit(content='❌ Invalid username!')
 			return
+		elif uuid == False:
+			await interaction.message.edit(content='❌ Error [1/3]. Contact <@!609544328737456149>')
+			return
+		await interaction.message.edit(content='🔄 Verifying Hypixel Account... [2/3]')
+		stats = await check_stats(uuid)
+		if stats == None:
+			await interaction.message.edit(content='❌ You have never joined Hypixel!')
+			return
+		elif stats == False:
+			await interaction.message.edit(content='❌ Error [2/3]. Contact <@!609544328737456149>')
+			return
+		await interaction.message.edit(content='🔄 Verifying Guild... [3/3]')
 		guild = await check_guild(self.username)
+		if guild == None:
+			await interaction.message.edit(content='❌ You are not in a guild!')
+			return
+		elif guild.id != '659785438ea8c9dca6f379c5':
+			await interaction.message.edit(content='❌ You are not in the Pikopian Empire guild!')
+			return
+		elif guild == False:
+			await interaction.message.edit(content='❌ Error [3/3]. Contact <@!609544328737456149>')
+			return
+		await interaction.message.edit(content='✅ Verified!')
 
 client = VerificationBot()
 mcAPI = API()
