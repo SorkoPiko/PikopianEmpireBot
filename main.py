@@ -89,6 +89,8 @@ class VerifyModal(discord.ui.Modal):
 			await msg.edit(content='❌ Error [4/4]. Contact <@!609544328737456149>')
 			return
 		await msg.edit(content='✅ Verified!')
+		
+		await interaction.user.edit(nick=f'{stats.rank} {self.username}')
 
 client = VerificationBot()
 mcAPI = API()
