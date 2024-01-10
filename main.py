@@ -45,19 +45,19 @@ class VerifyModal(discord.ui.Modal):
 	)
 	async def on_submit(self, interaction: discord.Interaction):
 		await interaction.response.defer()
-		await interaction.followup.send('Verifying...')
+		await interaction.followup.send('Verifying...', ephemeral=True)
 		uuid = get_uuid(self.username)
 		if uuid == None:
 			await interaction.followup.send('❌ Invalid username!', ephemeral=True)
 			return
+		guild = await check_guild(self.username)
 
 client = VerificationBot()
 mcAPI = API()
 
 @client.tree.command(name='setup',description='Setup the verification system.')
 async def setup(interaction: discord.Interaction):
-	await interaction.response.defer()
-	await interaction.followup.send('Setting up the verification system...', ephemeral=True)
+	await interaction.response.send_message('Setting up the verification system...', ephemeral=True)
 	embed=discord.Embed(title="Hypixel Verification", description="Please verify yourself to get access to channels. In order to get verified, you will have to link your Discord username to your Hypixel account. Attached is a GIF that shows the process.", color=0x00ff00)
 	embed.set_thumbnail(url="https://www.dropbox.com/scl/fi/7wsacdmogm3jmnnnm1mua/verifygif.gif?rlkey=7flriqaqvhzq5f5yryyo88aed&raw=1")
 	embed.add_field(name="Is this a scam?", value="We will **never** ask you for your email, password, or any codes that Microsoft will send you. All we ask for is your **Minecraft Username** so we can check if you are in the guild or not.", inline=True)

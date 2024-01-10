@@ -16,11 +16,15 @@ def get_uuid(username: str) -> str:
 async def check_guild(uuid: str):
 	client = hypixel.Client(os.getenv('HYPIXEL_API_KEY'))
 	async with client:
-		return await client.player(uuid)
+		return await client.guild_from_player(uuid)
 
 def compare_usernames(dcUsername: str, hypixelUsername: str):
 	dcUsername = dcUsername.removesuffix('#0')
 	hypixelUsername = hypixelUsername.removesuffix('#0')
 	if '#' in dcUsername and '#' in hypixelUsername:
-		legacyUsername = True
-	return dcUsername == hypixelUsername
+		#legacyUsername = True
+		return dcUsername == hypixelUsername
+	return dcUsername.lower() == hypixelUsername.lower()
+
+guild = asyncio.run(check_guild('sorkopiko'))
+print(guild)
