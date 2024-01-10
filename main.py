@@ -44,39 +44,57 @@ class VerifyModal(discord.ui.Modal):
 		max_length=16
 	)
 	async def on_submit(self, interaction: discord.Interaction):
-		await interaction.response.send_message('🔄 Verifying Username... [1/3]', ephemeral=True)
+		self.username = str(self.username.value)
+		await interaction.response.defer()
+
+		msg = await interaction.followup.send('🔄 Verifying Username... [1/4]', ephemeral=True, wait=True)
 		uuid = get_uuid(self.username)
 		if uuid == None:
-			await interaction.message.edit(content='❌ Invalid username!')
+			await msg.edit(content='❌ Invalid username!')
 			return
 		elif uuid == False:
-			await interaction.message.edit(content='❌ Error [1/3]. Contact <@!609544328737456149>')
+			await msg.edit(content='❌ Error [1/4]. Contact <@!609544328737456149>')
 			return
-		await interaction.message.edit(content='🔄 Verifying Hypixel Account... [2/3]')
+		
+		await msg.edit(content='🔄 Verifying Hypixel Account... [2/4]')
 		stats = await check_stats(uuid)
 		if stats == None:
-			await interaction.message.edit(content='❌ You have never joined Hypixel!')
+			await msg.edit(content='❌ You have never joined Hypixel!')
 			return
 		elif stats == False:
-			await interaction.message.edit(content='❌ Error [2/3]. Contact <@!609544328737456149>')
+			await msg.edit(content='❌ Error [2/4]. Contact <@!609544328737456149>')
 			return
-		await interaction.message.edit(content='🔄 Verifying Guild... [3/3]')
+		
+		await msg.edit(content='🔄 Verifying Discord Account... [3/4]')
+		if stats.socials.discord == None:
+			await msg.edit(content='❌ You have not linked your Discord account!')
+			return
+		dc = compare_usernames(interaction.user.name, stats.socials.discord)
+		if dc == False:
+			await msg.edit(content='❌ Incorrect Discord Account linked!')
+			return
+		elif stats == None:
+			await msg.edit(content='❌ Error [3/4]. Contact <@!609544328737456149>')
+			return
+
+		await msg.edit(content='🔄 Verifying Guild... [4/4]')
 		guild = await check_guild(self.username)
 		if guild == None:
-			await interaction.message.edit(content='❌ You are not in a guild!')
+			await msg.edit(content='❌ You are not in a guild!')
 			return
 		elif guild.id != '659785438ea8c9dca6f379c5':
-			await interaction.message.edit(content='❌ You are not in the Pikopian Empire guild!')
+			await msg.edit(content='❌ You are not in the Pikopian Empire guild!')
 			return
 		elif guild == False:
-			await interaction.message.edit(content='❌ Error [3/3]. Contact <@!609544328737456149>')
+			await msg.edit(content='❌ Error [4/4]. Contact <@!609544328737456149>')
 			return
-		await interaction.message.edit(content='✅ Verified!')
+		await msg.edit(content='✅ Verified!')
 
 client = VerificationBot()
 mcAPI = API()
 
 @client.tree.command(name='setup',description='Setup the verification system.')
+@commands.has_permissions(manage_guild=True)
 async def setup(interaction: discord.Interaction):
 	await interaction.response.send_message('Setting up the verification system...', ephemeral=True)
 	embed=discord.Embed(title="Hypixel Verification", description="Please verify yourself to get access to channels. In order to get verified, you will have to link your Discord username to your Hypixel account. Attached is a GIF that shows the process.", color=0x00ff00)

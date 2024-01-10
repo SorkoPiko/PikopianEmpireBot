@@ -32,13 +32,14 @@ async def check_guild(username: str) -> hypixel.Guild:
 			return await client.guild_from_player(username)
 		except GuildNotFound:
 			return None
-		except HypixelException:
-			return False
 
 def compare_usernames(dcUsername: str, hypixelUsername: str):
-	dcUsername = dcUsername.removesuffix('#0')
-	hypixelUsername = hypixelUsername.removesuffix('#0')
-	if '#' in dcUsername and '#' in hypixelUsername:
-		#legacyUsername = True
-		return dcUsername == hypixelUsername
-	return dcUsername.lower() == hypixelUsername.lower()
+	try:
+		dcUsername = dcUsername.removesuffix('#0')
+		hypixelUsername = hypixelUsername.removesuffix('#0')
+		if '#' in dcUsername and '#' in hypixelUsername:
+			#legacyUsername = True
+			return dcUsername == hypixelUsername
+		return dcUsername.lower() == hypixelUsername.lower()
+	except:
+		return None
