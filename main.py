@@ -1,12 +1,12 @@
 from mojang import API
 from dotenv import load_dotenv
 import os, discord, uuid, json
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import ui
 from api import *
+import json
 
 load_dotenv()
-
 
 class VerificationBot(commands.Bot):
 	def __init__(self):
@@ -89,7 +89,6 @@ class VerifyModal(discord.ui.Modal):
 		elif guild == False:
 			await msg.edit(content='❌ Error [4/4]. Contact <@!609544328737456149>')
 			return
-		await msg.edit(content='✅ Verified!')
 		
 		member = next((
                 member for member in guild.members if member.uuid == uuid.UUID(playerUUID).hex
@@ -101,7 +100,9 @@ class VerifyModal(discord.ui.Modal):
 		if member.rank.name in settings['ranks']:
 			await interaction.user.add_roles(discord.utils.get(interaction.guild.roles, id=settings['ranks'][member.rank.name]))
 
-		await interaction.user.edit(nick=f'[{stats.bedwars.level}✫] [{stats.rank}] {self.username}')
+		await interaction.user.edit(nick=f'[{stats.bedwars.level}✫] {stats.name}')
+		write_to_db(interaction.user.id, playerUUID)
+		await msg.edit(content=f'✅ Verified as `[{stats.bedwars.level}✫] {stats.name}`!')
 
 client = VerificationBot()
 mcAPI = API()
@@ -116,5 +117,38 @@ async def setup(interaction: discord.Interaction):
 	embed.add_field(name="Join the guild", value="Not yet a member of the guild? Apply now with `/guild join Pikopian Empire`", inline=True)
 	embed.set_footer(text="Any issues? Contact sorkopiko")
 	await interaction.channel.send(embed=embed, view=VerifyButton())
+
+@tasks.loop(minutes=10)
+async def updateLoop():
+	with open('settings.json') as f:
+		settings = json.load(f)
+	with open('db.json') as f:
+		db = json.load(f)
+	dcGuild: discord.Guild = await client.get_guild(settings["dcGuild"])
+	memberRole = discord.utils.get(dcGuild.roles, id=settings['member'])
+	guild = await id_guild(settings['guild'])
+	for user, mcUUID in db.items():
+		dcMember: discord.Member = await dcGuild.get_member(int(user))
+		if dcMember == None:
+			remove_from_db(user)
+			continue
+		member = next((
+                member for member in guild.members if member.uuid == uuid.UUID(mcUUID).hex
+            ), None)
+		if member == None:
+			await dcMember.remove_roles(dcMember.roles)
+			await dcMember.edit(nick=None)
+			remove_from_db(user)
+			continue
+		if member.rank.name in settings['ranks']:
+			newRole = discord.utils.get(dcGuild.roles, id=settings['ranks'][member.rank.name])
+			await dcMember.add_roles(newRole)
+			dcMemberRoles = dcMember.roles
+			dcMemberRoles.remove(memberRole)
+			dcMemberRoles.remove(newRole)
+			if len(dcMemberRoles) > 0:
+				await dcMember.remove_roles(*dcMemberRoles)
+		memberStats = await check_stats(mcUUID)
+		await dcMember.edit(nick=f'[{memberStats.bedwars.level}✫] {memberStats.name}')
 
 client.run(os.getenv("TOKEN"))
