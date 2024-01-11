@@ -1,11 +1,12 @@
 from mojang import API
 from dotenv import load_dotenv
-import os, discord
+import os, discord, uuid, json
 from discord.ext import commands
 from discord import ui
 from api import *
 
 load_dotenv()
+
 
 class VerificationBot(commands.Bot):
 	def __init__(self):
@@ -48,16 +49,16 @@ class VerifyModal(discord.ui.Modal):
 		await interaction.response.defer()
 
 		msg = await interaction.followup.send('🔄 Verifying Username... [1/4]', ephemeral=True, wait=True)
-		uuid = get_uuid(self.username)
-		if uuid == None:
+		playerUUID = get_uuid(self.username)
+		if playerUUID == None:
 			await msg.edit(content='❌ Invalid username!')
 			return
-		elif uuid == False:
+		elif playerUUID == False:
 			await msg.edit(content='❌ Error [1/4]. Contact <@!609544328737456149>')
 			return
 		
 		await msg.edit(content='🔄 Verifying Hypixel Account... [2/4]')
-		stats = await check_stats(uuid)
+		stats = await check_stats(playerUUID)
 		if stats == None:
 			await msg.edit(content='❌ You have never joined Hypixel!')
 			return
@@ -90,7 +91,17 @@ class VerifyModal(discord.ui.Modal):
 			return
 		await msg.edit(content='✅ Verified!')
 		
-		await interaction.user.edit(nick=f'{stats.rank} {self.username}')
+		member = next((
+                member for member in guild.members if member.uuid == uuid.UUID(playerUUID).hex
+            ), None)
+		with open('settings.json') as f:
+			settings = json.load(f)
+		
+		await interaction.user.add_roles(discord.utils.get(interaction.guild.roles, id=settings['member']))
+		if member.rank.name in settings['ranks']:
+			await interaction.user.add_roles(discord.utils.get(interaction.guild.roles, id=settings['ranks'][member.rank.name]))
+
+		await interaction.user.edit(nick=f'[{stats.bedwars.level}✫] [{stats.rank}] {self.username}')
 
 client = VerificationBot()
 mcAPI = API()
