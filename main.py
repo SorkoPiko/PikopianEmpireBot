@@ -92,8 +92,8 @@ class VerifyModal(discord.ui.Modal):
 			return
 		
 		member = next((
-                member for member in guild.members if member.uuid == uuid.UUID(playerUUID).hex
-            ), None)
+				member for member in guild.members if member.uuid == uuid.UUID(playerUUID).hex
+			), None)
 		with open('settings.json') as f:
 			settings = json.load(f)
 		
@@ -135,8 +135,8 @@ async def updateLoop():
 			remove_from_db(user)
 			continue
 		member = next((
-                member for member in guild.members if member.uuid == uuid.UUID(mcUUID).hex
-            ), None)
+				member for member in guild.members if member.uuid == uuid.UUID(mcUUID).hex
+			), None)
 		if member == None:
 			dcMemberRoles = dcMember.roles
 			dcMemberRoles.remove(everyone)
