@@ -69,7 +69,7 @@ class VerifyModal(discord.ui.Modal):
 		
 		await msg.edit(content='🔄 Verifying Discord Account... [3/4]')
 		if stats.socials.discord == None:
-			await msg.edit(content='❌ You have not linked your Discord account! Please follow the provided GIF to link it.')
+			await msg.edit(content=f'❌ You have not linked your Discord account: `{interaction.user.name}`! Please follow the provided GIF to link it.')
 			return
 		dc = compare_usernames(interaction.user.name, stats.socials.discord)
 		if dc == False:
