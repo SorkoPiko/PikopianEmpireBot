@@ -138,7 +138,9 @@ async def updateLoop():
                 member for member in guild.members if member.uuid == uuid.UUID(mcUUID).hex
             ), None)
 		if member == None:
-			await dcMember.remove_roles(dcMember.roles)
+			dcMemberRoles = dcMember.roles
+			dcMemberRoles.remove(everyone)
+			await dcMember.remove_roles(*dcMemberRoles)
 			await dcMember.edit(nick=None)
 			remove_from_db(user)
 			continue
@@ -161,6 +163,6 @@ async def updateLoop():
 
 		memberStats = await check_stats(mcUUID)
 		await dcMember.edit(nick=f'[{memberStats.bedwars.level}✫] {memberStats.name}')
-	print('finished loop')
+	print('Updated!')
 
 client.run(os.getenv("TOKEN"))
