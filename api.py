@@ -58,7 +58,7 @@ def write_to_db(discord_id: int, minecraft_uuid: str):
 	with open('db.json', 'r') as f:
 		previous = json.load(f)
 	with open('db.json', 'w') as f:
-		json.dump(data | previous, f)
+		json.dump(previous | data, f)
 
 def remove_from_db(discord_id: str):
 	with open('db.json', 'r') as f:

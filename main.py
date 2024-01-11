@@ -24,6 +24,7 @@ class VerificationBot(commands.Bot):
 		await self.change_presence(activity=discord.Game(name='Bedwars'),status=discord.Status.online)
 		await self.load_extension('jishaku')
 		print(f"We have logged in as {self.user}.")
+		await updateLoop.start()
 			
 class VerifyButton(discord.ui.View):
 	def __init__(self):
@@ -118,17 +119,18 @@ async def setup(interaction: discord.Interaction):
 	embed.set_footer(text="Any issues? Contact sorkopiko")
 	await interaction.channel.send(embed=embed, view=VerifyButton())
 
-@tasks.loop(minutes=10)
+@tasks.loop(minutes=5)
 async def updateLoop():
 	with open('settings.json') as f:
 		settings = json.load(f)
 	with open('db.json') as f:
 		db = json.load(f)
-	dcGuild: discord.Guild = await client.get_guild(settings["dcGuild"])
+	dcGuild = client.get_guild(settings["dcGuild"])
 	memberRole = discord.utils.get(dcGuild.roles, id=settings['member'])
 	guild = await id_guild(settings['guild'])
+	everyone = discord.utils.get(dcGuild.roles, id=settings['everyone'])
 	for user, mcUUID in db.items():
-		dcMember: discord.Member = await dcGuild.get_member(int(user))
+		dcMember = dcGuild.get_member(int(user))
 		if dcMember == None:
 			remove_from_db(user)
 			continue
@@ -140,15 +142,25 @@ async def updateLoop():
 			await dcMember.edit(nick=None)
 			remove_from_db(user)
 			continue
+		await dcMember.add_roles(memberRole)
 		if member.rank.name in settings['ranks']:
 			newRole = discord.utils.get(dcGuild.roles, id=settings['ranks'][member.rank.name])
 			await dcMember.add_roles(newRole)
 			dcMemberRoles = dcMember.roles
 			dcMemberRoles.remove(memberRole)
 			dcMemberRoles.remove(newRole)
+			dcMemberRoles.remove(everyone)
 			if len(dcMemberRoles) > 0:
 				await dcMember.remove_roles(*dcMemberRoles)
+		else:
+			dcMemberRoles = dcMember.roles
+			dcMemberRoles.remove(memberRole)
+			dcMemberRoles.remove(everyone)
+			if len(dcMemberRoles) > 0:
+				await dcMember.remove_roles(*dcMemberRoles)
+
 		memberStats = await check_stats(mcUUID)
 		await dcMember.edit(nick=f'[{memberStats.bedwars.level}✫] {memberStats.name}')
+	print('finished loop')
 
 client.run(os.getenv("TOKEN"))
